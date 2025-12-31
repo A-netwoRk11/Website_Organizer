@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Website Organizer{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <h1>📊 Dashboard</h1>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">📧</div>
+            <div class="stat-info">
+                <h3>{{ stats.total_emails }}</h3>
+                <p>Email IDs</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🌐</div>
+            <div class="stat-info">
+                <h3>{{ stats.total_websites }}</h3>
+                <p>Websites</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📝</div>
+            <div class="stat-info">
+                <h3>{{ stats.pending_submissions }}</h3>
+                <p>Pending</p>
+            </div>
+        </div>
+        <div class="stat-card {% if stats.overdue > 0 %}overdue{% endif %}">
+            <div class="stat-icon">⚠️</div>
+            <div class="stat-info">
+                <h3>{{ stats.overdue }}</h3>
+                <p>Overdue</p>
+            </div>
+        </div>
+    </div>
+
+    {% if overdue %}
+    <div class="alert alert-danger">
+        <h3>⚠️ Overdue Submissions ({{ overdue|length }})</h3>
+        <ul>
+            {% for sub in overdue %}
+            <li>
+                <strong>{{ sub.title }}</strong> - 
+                {{ sub.website.name }} ({{ sub.website.email_account.email }})
+                - Due: {{ sub.due_date.strftime('%Y-%m-%d %H:%M') }}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <div class="section">
+        <h2>📅 Upcoming Submissions</h2>
+        {% if upcoming %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Website</th>
+                    <th>Email</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sub in upcoming %}
+                <tr>
+                    <td><strong>{{ sub.title }}</strong></td>
+                    <td>{{ sub.website.name }}</td>
+                    <td>{{ sub.website.email_account.email }}</td>
+                    <td>{{ sub.due_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td><span class="badge badge-{{ sub.status }}">{{ sub.status }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty-message">No upcoming submissions</p>
+        {% endif %}
+    </div>
+
+    <div class="section">
+        <h2>📧 Quick Access to Email IDs</h2>
+        {% if emails %}
+        <div class="email-grid">
+            {% for email in emails %}
+            <div class="email-card">
+                <div class="email-header">
+                    <h3>{{ email.email }}</h3>
+                </div>
+                <p class="email-purpose">{{ email.purpose or 'No purpose specified' }}</p>
+                <div class="email-stats">
+                    <span>🌐 {{ email.websites|length }} websites</span>
+                </div>
+                <a href="/websites/{{ email.id }}" class="btn btn-sm">View Websites</a>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="empty-message">No email IDs added yet. <a href="/emails">Add your first email ID</a></p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

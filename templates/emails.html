@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Email IDs - Website Organizer{% endblock %}
+
+{% block content %}
+<div class="page">
+    <div class="page-header">
+        <h1>📧 Email IDs</h1>
+        <button class="btn btn-primary" onclick="toggleModal('addEmailModal')">+ Add Email ID</button>
+    </div>
+
+    {% if emails %}
+    <div class="email-list">
+        {% for email in emails %}
+        <div class="email-item">
+            <div class="email-content">
+                <h3>{{ email.email }}</h3>
+                <p>{{ email.purpose or 'No purpose specified' }}</p>
+                <small>Added: {{ email.created_at.strftime('%Y-%m-%d') }}</small>
+                <div class="email-stats">
+                    <span>🌐 {{ email.websites|length }} websites</span>
+                </div>
+            </div>
+            <div class="email-actions">
+                <a href="/websites/{{ email.id }}" class="btn btn-sm">View Websites</a>
+                <button class="btn btn-danger btn-sm" onclick="deleteEmail({{ email.id }})">Delete</button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>No email IDs added yet</h3>
+        <p>Start by adding your first email ID</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add Email Modal -->
+<div id="addEmailModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="toggleModal('addEmailModal')">&times;</span>
+        <h2>Add New Email ID</h2>
+        <form action="/add_email" method="POST">
+            <div class="form-group">
+                <label for="email">Email Address *</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="purpose">Purpose</label>
+                <input type="text" id="purpose" name="purpose" placeholder="e.g., Work, Personal, Freelance">
+            </div>
+            <button type="submit" class="btn btn-primary">Add Email</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

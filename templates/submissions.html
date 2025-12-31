@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Submissions - Website Organizer{% endblock %}
+
+{% block content %}
+<div class="page">
+    <div class="page-header">
+        <h1>📝 Submission Deadlines</h1>
+        <button class="btn btn-primary" onclick="toggleModal('addSubmissionModal')">+ Add Submission</button>
+    </div>
+
+    {% if submissions %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Website</th>
+                <th>Email</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sub in submissions %}
+            <tr class="{% if sub.due_date < now() and sub.status == 'pending' %}overdue-row{% endif %}">
+                <td><strong>{{ sub.title }}</strong></td>
+                <td>{{ sub.description[:50] }}{% if sub.description|length > 50 %}...{% endif %}</td>
+                <td>{{ sub.website.name }}</td>
+                <td>{{ sub.website.email_account.email }}</td>
+                <td>{{ sub.due_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>
+                    <select class="status-select" onchange="updateStatus({{ sub.id }}, this.value)">
+                        <option value="pending" {% if sub.status == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="completed" {% if sub.status == 'completed' %}selected{% endif %}>Completed</option>
+                    </select>
+                </td>
+                <td>
+                    <button class="btn btn-danger btn-sm" onclick="deleteSubmission({{ sub.id }})">Delete</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <h3>No submissions added yet</h3>
+        <p>Start tracking your important submission deadlines</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add Submission Modal -->
+<div id="addSubmissionModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="toggleModal('addSubmissionModal')">&times;</span>
+        <h2>Add New Submission</h2>
+        <form action="/add_submission" method="POST">
+            <div class="form-group">
+                <label for="website_id">Website *</label>
+                <select id="website_id" name="website_id" required>
+                    <option value="">Select a website</option>
+                    {% for website in websites %}
+                    <option value="{{ website.id }}">{{ website.name }} ({{ website.email_account.email }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="title">Title *</label>
+                <input type="text" id="title" name="title" required placeholder="e.g., Assignment Submission">
+            </div>
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" rows="3" placeholder="Additional details..."></textarea>
+            </div>
+            <div class="form-group">
+                <label for="due_date">Due Date & Time *</label>
+                <input type="datetime-local" id="due_date" name="due_date" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Submission</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function now() {
+    return new Date();
+}
+</script>
+{% endblock %}

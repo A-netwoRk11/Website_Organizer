@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Websites - {{ email.email }}{% endblock %}
+
+{% block content %}
+<div class="page">
+    <div class="page-header">
+        <div>
+            <a href="/emails" class="breadcrumb">← Back to Emails</a>
+            <h1>🌐 Websites for {{ email.email }}</h1>
+            <p class="email-purpose">{{ email.purpose or 'No purpose specified' }}</p>
+        </div>
+        <button class="btn btn-primary" onclick="toggleModal('addWebsiteModal')">+ Add Website</button>
+    </div>
+
+    {% if websites %}
+    <div class="website-grid">
+        {% for website in websites %}
+        <div class="website-card">
+            <div class="website-header">
+                <h3>{{ website.name }}</h3>
+                <button class="btn-icon" onclick="deleteWebsite({{ website.id }})">🗑️</button>
+            </div>
+            <a href="{{ website.url }}" target="_blank" class="website-url">{{ website.url }}</a>
+            {% if website.username %}
+            <p class="website-username">👤 {{ website.username }}</p>
+            {% endif %}
+            <p class="website-date">Added: {{ website.created_at.strftime('%Y-%m-%d') }}</p>
+            <div class="website-stats">
+                <span>📝 {{ website.submissions|length }} submissions</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>No websites added yet</h3>
+        <p>Add websites associated with this email ID</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add Website Modal -->
+<div id="addWebsiteModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="toggleModal('addWebsiteModal')">&times;</span>
+        <h2>Add New Website</h2>
+        <form action="/add_website" method="POST">
+            <input type="hidden" name="email_id" value="{{ email.id }}">
+            <div class="form-group">
+                <label for="name">Website Name *</label>
+                <input type="text" id="name" name="name" required placeholder="e.g., GitHub, LinkedIn">
+            </div>
+            <div class="form-group">
+                <label for="url">Website URL *</label>
+                <input type="url" id="url" name="url" required placeholder="https://example.com">
+            </div>
+            <div class="form-group">
+                <label for="username">Username (Optional)</label>
+                <input type="text" id="username" name="username" placeholder="Your username on this site">
+            </div>
+            <button type="submit" class="btn btn-primary">Add Website</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
