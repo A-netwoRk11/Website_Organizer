@@ -27,28 +27,6 @@ A comprehensive web application to organize multiple email IDs, associated websi
 3. **Open in Browser**:
    Navigate to `http://localhost:5000`
 
-## 📁 Project Structure
-
-```
-website organizer/
-│
-├── app.py                 # Main Flask application
-├── requirements.txt       # Python dependencies
-├── organizer.db          # SQLite database (auto-created)
-│
-├── templates/            # HTML templates
-│   ├── base.html        # Base template
-│   ├── index.html       # Dashboard
-│   ├── emails.html      # Email management
-│   ├── websites.html    # Website management
-│   ├── submissions.html # Submission tracking
-│   └── search.html      # Search results
-│
-└── static/              # Static files
-    ├── style.css       # Stylesheet
-    └── script.js       # JavaScript functions
-```
-
 ## 💡 Usage
 
 ### Adding Email IDs
@@ -96,45 +74,6 @@ website organizer/
 - Automatic overdue detection
 - Status management (Pending/Completed)
 - Search and filter submissions
-
-## 🔧 Customization
-
-### Change Port
-Edit `app.py` line:
-```python
-app.run(debug=True, port=5000)  # Change 5000 to your preferred port
-```
-
-### Modify Colors
-Edit `static/style.css` to change the color scheme:
-```css
-background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-```
-
-## 📊 Database Schema
-
-### EmailAccount
-- id (Primary Key)
-- email
-- purpose
-- created_at
-
-### Website
-- id (Primary Key)
-- name
-- url
-- username
-- email_id (Foreign Key)
-- created_at
-
-### Submission
-- id (Primary Key)
-- title
-- description
-- due_date
-- website_id (Foreign Key)
-- status
-- created_at
 
 ## 🛡️ Security Note
 

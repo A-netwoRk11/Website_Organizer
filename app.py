@@ -1,5 +1,5 @@
 # type: ignore
-from flask import Flask, render_template, request, jsonify, redirect, url_for # type: ignore
+from flask import Flask, render_template, request, jsonify, redirect, url_for 
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
 import os
@@ -11,7 +11,7 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-change-in-produ
 
 db = SQLAlchemy(app)
 
-# Database Models
+
 class EmailAccount(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(150), unique=True, nullable=False)
@@ -34,7 +34,7 @@ class Submission(db.Model):
     description = db.Column(db.Text)
     due_date = db.Column(db.DateTime, nullable=False)
     website_id = db.Column(db.Integer, db.ForeignKey('website.id'), nullable=False)
-    status = db.Column(db.String(50), default='pending')  # pending, completed, overdue
+    status = db.Column(db.String(50), default='pending')  
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class DayPlan(db.Model):
@@ -44,16 +44,16 @@ class DayPlan(db.Model):
     description = db.Column(db.Text)
     start_time = db.Column(db.Time)
     end_time = db.Column(db.Time)
-    priority = db.Column(db.String(50), default='medium')  # high, medium, low
-    category = db.Column(db.String(100))  # work, personal, study, exercise, etc.
-    status = db.Column(db.String(50), default='pending')  # pending, completed, cancelled
+    priority = db.Column(db.String(50), default='medium')  
+    category = db.Column(db.String(100))  
+    status = db.Column(db.String(50), default='pending')  
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-# Create tables
+
 with app.app_context():
     db.create_all()
 
-# Routes
+
 @app.route('/')
 def index():
     emails = EmailAccount.query.all()
@@ -196,13 +196,13 @@ def day_planner():
     
     tasks = DayPlan.query.filter_by(date=selected_date).order_by(DayPlan.start_time).all()
     
-    # Get submissions due on this date
+    
     submissions_today = Submission.query.filter(
         db.func.date(Submission.due_date) == selected_date,
         Submission.status == 'pending'
     ).all()
     
-    # Calculate statistics for the day
+    
     total_tasks = len(tasks)
     completed_tasks = len([t for t in tasks if t.status == 'completed'])
     pending_tasks = len([t for t in tasks if t.status == 'pending'])
