@@ -2,12 +2,18 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for 
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
+from flask import send_from_directory
+
 import os
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///organizer.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-change-in-production')
+
+@app.route('/ads.txt')
+def ads():
+    return send_from_directory('.', 'ads.txt')
 
 db = SQLAlchemy(app)
 
