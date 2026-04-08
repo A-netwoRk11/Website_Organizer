@@ -76,3 +76,7 @@ function checkDeadlines() {
 document.addEventListener('DOMContentLoaded', function() {
     checkDeadlines();
 });
+
+//google adsense
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5288040590704359"
+     crossorigin="anonymous"></script>
