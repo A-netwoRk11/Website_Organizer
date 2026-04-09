@@ -1,3 +1,4 @@
+// Modal Toggle
 function toggleModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal.classList.contains('active')) {
@@ -6,11 +7,15 @@ function toggleModal(modalId) {
         modal.classList.add('active');
     }
 }
+
+// Close modal when clicking outside
 window.onclick = function(event) {
     if (event.target.classList.contains('modal')) {
         event.target.classList.remove('active');
     }
 }
+
+// Delete Email
 function deleteEmail(id) {
     if (confirm('Are you sure you want to delete this email ID? All associated websites and submissions will also be deleted.')) {
         fetch(`/delete_email/${id}`, {
@@ -25,6 +30,8 @@ function deleteEmail(id) {
         .catch(error => console.error('Error:', error));
     }
 }
+
+// Delete Website
 function deleteWebsite(id) {
     if (confirm('Are you sure you want to delete this website? All associated submissions will also be deleted.')) {
         fetch(`/delete_website/${id}`, {
@@ -39,6 +46,8 @@ function deleteWebsite(id) {
         .catch(error => console.error('Error:', error));
     }
 }
+
+// Delete Submission
 function deleteSubmission(id) {
     if (confirm('Are you sure you want to delete this submission?')) {
         fetch(`/delete_submission/${id}`, {
@@ -53,6 +62,8 @@ function deleteSubmission(id) {
         .catch(error => console.error('Error:', error));
     }
 }
+
+// Update Submission Status
 function updateStatus(id, status) {
     fetch(`/update_submission_status/${id}`, {
         method: 'POST',
@@ -69,14 +80,14 @@ function updateStatus(id, status) {
     })
     .catch(error => console.error('Error:', error));
 }
+
+// Check for upcoming deadlines
 function checkDeadlines() {
-    
+    // This could be expanded to show browser notifications
     console.log('Checking deadlines...');
 }
+
+// Run on page load
 document.addEventListener('DOMContentLoaded', function() {
     checkDeadlines();
 });
-
-//google adsense
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5288040590704359"
-     crossorigin="anonymous"></script>
