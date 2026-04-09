@@ -24,7 +24,7 @@
         </thead>
         <tbody>
             {% for sub in submissions %}
-            <tr class="{% if sub.due_date < now() and sub.status == 'pending' %}overdue-row{% endif %}">
+            <tr class="{% if sub.due_date < current_time and sub.status == 'pending' %}overdue-row{% endif %}">
                 <td><strong>{{ sub.title }}</strong></td>
                 <td>{{ sub.description[:50] }}{% if sub.description|length > 50 %}...{% endif %}</td>
                 <td>{{ sub.website.name }}</td>
@@ -83,9 +83,4 @@
     </div>
 </div>
 
-<script>
-function now() {
-    return new Date();
-}
-</script>
 {% endblock %}
