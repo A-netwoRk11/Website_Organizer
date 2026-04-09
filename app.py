@@ -1,23 +1,33 @@
 # type: ignore
-from flask import Flask, render_template, request, jsonify, redirect, url_for 
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash # type: ignore
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from datetime import datetime, timedelta
 from flask import send_from_directory
-
 import os
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///organizer.db')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-change-in-production')
+database_url = os.getenv('DATABASE_URL')
+if database_url and database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
 
-@app.route('/ads.txt')
-def ads():
-    return send_from_directory('.', 'ads.txt')
+if database_url:
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+else:
+    os.makedirs(app.instance_path, exist_ok=True)
+    sqlite_db_path = os.getenv('SQLITE_DB_PATH', os.path.join(app.instance_path, 'organizer.db'))
+    sqlite_dir = os.path.dirname(sqlite_db_path)
+    if sqlite_dir:
+        os.makedirs(sqlite_dir, exist_ok=True)
+    app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{sqlite_db_path}"
+
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-me')
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'pool_pre_ping': True}
 
 db = SQLAlchemy(app)
 
-
+# Database Models
 class EmailAccount(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(150), unique=True, nullable=False)
@@ -40,7 +50,7 @@ class Submission(db.Model):
     description = db.Column(db.Text)
     due_date = db.Column(db.DateTime, nullable=False)
     website_id = db.Column(db.Integer, db.ForeignKey('website.id'), nullable=False)
-    status = db.Column(db.String(50), default='pending')  
+    status = db.Column(db.String(50), default='pending')  # pending, completed, overdue
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class DayPlan(db.Model):
@@ -50,16 +60,16 @@ class DayPlan(db.Model):
     description = db.Column(db.Text)
     start_time = db.Column(db.Time)
     end_time = db.Column(db.Time)
-    priority = db.Column(db.String(50), default='medium')  
-    category = db.Column(db.String(100))  
-    status = db.Column(db.String(50), default='pending')  
+    priority = db.Column(db.String(50), default='medium')  # high, medium, low
+    category = db.Column(db.String(100))  # work, personal, study, exercise, etc.
+    status = db.Column(db.String(50), default='pending')  # pending, completed, cancelled
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-
+# Create tables
 with app.app_context():
     db.create_all()
 
-
+# Routes
 @app.route('/')
 def index():
     emails = EmailAccount.query.all()
@@ -91,12 +101,24 @@ def emails():
 @app.route('/add_email', methods=['POST'])
 def add_email():
     data = request.form
-    new_email = EmailAccount(
-        email=data['email'],
-        purpose=data.get('purpose', '')
-    )
+    email_value = data.get('email', '').strip()
+    purpose_value = data.get('purpose', '').strip()
+
+    if not email_value:
+        flash('Email address is required.', 'error')
+        return redirect(url_for('emails'))
+
+    new_email = EmailAccount(email=email_value, purpose=purpose_value)
     db.session.add(new_email)
-    db.session.commit()
+    try:
+        db.session.commit()
+        flash('Email added successfully.', 'success')
+    except IntegrityError:
+        db.session.rollback()
+        flash('This email already exists.', 'error')
+    except SQLAlchemyError:
+        db.session.rollback()
+        flash('Could not save email. Please try again.', 'error')
     return redirect(url_for('emails'))
 
 @app.route('/delete_email/<int:id>', methods=['POST'])
@@ -115,14 +137,20 @@ def websites(email_id):
 @app.route('/add_website', methods=['POST'])
 def add_website():
     data = request.form
+    email_id = data.get('email_id')
     new_website = Website(
-        name=data['name'],
-        url=data['url'],
-        username=data.get('username', ''),
-        email_id=data['email_id']
+        name=data.get('name', '').strip(),
+        url=data.get('url', '').strip(),
+        username=data.get('username', '').strip(),
+        email_id=email_id
     )
     db.session.add(new_website)
-    db.session.commit()
+    try:
+        db.session.commit()
+        flash('Website added successfully.', 'success')
+    except SQLAlchemyError:
+        db.session.rollback()
+        flash('Could not save website. Please check inputs and try again.', 'error')
     return redirect(url_for('websites', email_id=data['email_id']))
 
 @app.route('/delete_website/<int:id>', methods=['POST'])
@@ -137,21 +165,31 @@ def delete_website(id):
 def submissions():
     all_submissions = Submission.query.order_by(Submission.due_date).all()
     websites = Website.query.all()
-    return render_template('submissions.html', submissions=all_submissions, websites=websites)
+    return render_template('submissions.html', submissions=all_submissions, websites=websites,
+                         current_time=datetime.now())
 
 @app.route('/add_submission', methods=['POST'])
 def add_submission():
     data = request.form
-    due_date = datetime.strptime(data['due_date'], '%Y-%m-%dT%H:%M')
-    
+    try:
+        due_date = datetime.strptime(data['due_date'], '%Y-%m-%dT%H:%M')
+    except (KeyError, ValueError):
+        flash('Invalid due date format.', 'error')
+        return redirect(url_for('submissions'))
+
     new_submission = Submission(
-        title=data['title'],
-        description=data.get('description', ''),
+        title=data.get('title', '').strip(),
+        description=data.get('description', '').strip(),
         due_date=due_date,
-        website_id=data['website_id']
+        website_id=data.get('website_id')
     )
     db.session.add(new_submission)
-    db.session.commit()
+    try:
+        db.session.commit()
+        flash('Submission added successfully.', 'success')
+    except SQLAlchemyError:
+        db.session.rollback()
+        flash('Could not save submission. Please try again.', 'error')
     return redirect(url_for('submissions'))
 
 @app.route('/update_submission_status/<int:id>', methods=['POST'])
@@ -202,13 +240,13 @@ def day_planner():
     
     tasks = DayPlan.query.filter_by(date=selected_date).order_by(DayPlan.start_time).all()
     
-    
+    # Get submissions due on this date
     submissions_today = Submission.query.filter(
         db.func.date(Submission.due_date) == selected_date,
         Submission.status == 'pending'
     ).all()
     
-    
+    # Calculate statistics for the day
     total_tasks = len(tasks)
     completed_tasks = len([t for t in tasks if t.status == 'completed'])
     pending_tasks = len([t for t in tasks if t.status == 'pending'])
@@ -227,7 +265,11 @@ def day_planner():
 @app.route('/add_day_plan', methods=['POST'])
 def add_day_plan():
     data = request.form
-    plan_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+    try:
+        plan_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+    except (KeyError, ValueError):
+        flash('Invalid date for day plan.', 'error')
+        return redirect(url_for('day_planner'))
     
     start_time = None
     end_time = None
@@ -238,16 +280,21 @@ def add_day_plan():
     
     new_plan = DayPlan(
         date=plan_date,
-        task_title=data['task_title'],
-        description=data.get('description', ''),
+        task_title=data.get('task_title', '').strip(),
+        description=data.get('description', '').strip(),
         start_time=start_time,
         end_time=end_time,
         priority=data.get('priority', 'medium'),
-        category=data.get('category', ''),
+        category=data.get('category', '').strip(),
         status='pending'
     )
     db.session.add(new_plan)
-    db.session.commit()
+    try:
+        db.session.commit()
+        flash('Task added successfully.', 'success')
+    except SQLAlchemyError:
+        db.session.rollback()
+        flash('Could not save day plan. Please try again.', 'error')
     
     return redirect(url_for('day_planner', date=data['date']))
 
@@ -267,6 +314,9 @@ def delete_day_plan(id):
     db.session.commit()
     return jsonify({'success': True, 'date': date})
 
+@app.route('/ads.txt')
+def ads():
+    return send_from_directory('.', 'ads.txt')
+
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    app.run(debug=True, port=5000)
